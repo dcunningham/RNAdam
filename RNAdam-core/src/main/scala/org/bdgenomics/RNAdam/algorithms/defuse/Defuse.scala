@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.RNAdam.algorithms.defuse
 
+import org.apache.spark.graphx.Graph
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.RNAdam.models.{ApproximateFusionEvent, FusionEvent, ReadPair}
 import org.bdgenomics.formats.avro.ADAMRecord
@@ -46,7 +47,39 @@ object Defuse {
    *         dcunningham
    */
   def classify(records: RDD[ADAMRecord]): (RDD[ReadPair], RDD[ReadPair], RDD[ReadPair]) =
-    ???
+  {
+    val mappedRecords = records.map(x => x.getReadName())
+    var concordant: RDD[ReadPair] = Seq();
+    var spanning: RDD[ReadPair] = List();
+    var split: RDD[ReadPair] = List();
+    for ((k: String, v: List[ADAMRecord]) <- mappedRecords) {
+      if (v.count == 2) {
+        val pair = ReadPair(v(0), v(1))
+        if (sameTranscript(pair.first, pair.second)) {
+          concordant += pair
+        }
+        else if (!hasTranscriptName(pair.second)) {
+          split += pair
+        }
+        else {
+          spanning += pair
+        }
+      }
+    }
+    (concordant, spanning, split)
+  }
+
+  def sameTranscript(first: ADAMRecord, second: ADAMRecord) {
+    val firstContig = first.getContig()
+    val secondContig = second.getContig()
+    if (!hasTranscriptName(firstContig) || !hasTranscriptName(secondContig))
+      return false
+    first.getContig.getContigName.equals(second.getContig.getContigname)
+  }
+
+  def hasTranscriptName(record: ADAMRecord) {
+    record.getContig() != null
+  }
 
   /**
    * Calculates a fragment length distribution, and excludes outliers given an
