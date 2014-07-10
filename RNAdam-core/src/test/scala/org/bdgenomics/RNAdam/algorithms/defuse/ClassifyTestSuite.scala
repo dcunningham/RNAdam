@@ -21,31 +21,44 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.util.SparkFunSuite
 import org.bdgenomics.formats.avro.{ ADAMRecord, ADAMContig }
+import org.bdgenomics.RNAdam.models.{ ReadPair }
 
 class ClassifyTestSuite extends SparkFunSuite {
 
   sparkTest("put your test here") {
     val mySc = sc // this is your SparkContext
 
-    val contig = ADAMContig.newBuilder
+    val contig1 = ADAMContig.newBuilder
       .setContigName("chr1")
       .build
 
     val recFirst = ADAMRecord.newBuilder()
-      .setReadName("fooFirst")
+      .setReadName("foo")
       .setFirstOfPair(true)
+      .setSecondOfPair(false)
       .setReadMapped(true)
-      .setContig(contig)
+      .setContig(contig1)
       .build()
 
     val recSecond = ADAMRecord.newBuilder()
-      .setReadName("fooSecond")
+      .setReadName("foo")
+      .setFirstOfPair(false)
       .setSecondOfPair(true)
       .setReadMapped(true)
-      .setContig(contig)
+      .setContig(contig1)
       .build()
 
-    val recordsRdd = sc.parallelize(Seq(recFirst, recSecond))
+    val records = Seq(recFirst, recSecond)
+
+    println("Records:")
+    records.foreach(x => println(x))
+
+    val recordsPaired: Seq[ReadPair] = Defuse.findReadPairs(records)
+
+    println("Record pairs:")
+    recordsPaired.foreach(x => println(x))
+
+    val recordsRdd = sc.parallelize(records)
 
     val recordsGrouped: RDD[(String, Seq[ADAMRecord])] = Defuse.preClassify(recordsRdd)
 

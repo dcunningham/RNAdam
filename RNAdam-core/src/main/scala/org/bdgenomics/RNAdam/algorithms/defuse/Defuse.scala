@@ -73,8 +73,6 @@ object Defuse {
         case (key: String, iter: Iterable[(String, ADAMRecord)]) => (key, iter.map(x => x._2).toSeq)
       }
 
-      def findReadPairs(records: Seq[ADAMRecord]): Seq[ReadPair] = ???
-
       val r3: RDD[(String, Seq[ReadPair])] = groupedByReadName.map {
         case (key: String, records: Seq[ADAMRecord]) =>
           (key, findReadPairs(records))
@@ -85,6 +83,8 @@ object Defuse {
       def split: RDD[ReadPair] = ???
       (concordant, spanning, split)
     }
+
+  def findReadPairs(records: Seq[ADAMRecord]): Seq[ReadPair] = ???
 
   def getConcordant(groupedByReadName: RDD[(String, Seq[ADAMRecord])]): RDD[ReadPair] = ???
 
